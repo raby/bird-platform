@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation(libs.spring.boot.starter)
+    implementation(libs.spring.boot.starter.jdbc)
     implementation(libs.spring.modulith.starter.core)
     implementation(project(":shared:domain"))
 

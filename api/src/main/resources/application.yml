@@ -10,6 +10,7 @@ spring:
     locations:
       - classpath:db/migration/shared
       - classpath:db/migration/identity
+      - classpath:db/migration/observations
 
 server:
   port: 8080
