@@ -1,6 +1,15 @@
 spring:
   application:
     name: bird-platform
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bird_platform
+    username: bird_platform
+    password: bird_platform
+  flyway:
+    enabled: true
+    locations:
+      - classpath:db/migration/shared
+      - classpath:db/migration/identity
 
 server:
   port: 8080

@@ -1,6 +1,6 @@
 package com.digitalbluebird.shared.domain
 
-sealed interface DomainError {
+interface DomainError {
     val message: String
 
     interface Validation : DomainError

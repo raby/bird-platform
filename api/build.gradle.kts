@@ -6,8 +6,13 @@ plugins {
 dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.jdbc)
     implementation(libs.spring.modulith.starter.core)
     implementation(libs.jackson.module.kotlin)
+
+    runtimeOnly(libs.postgresql)
+    runtimeOnly(libs.flyway.core)
+    runtimeOnly(libs.flyway.database.postgresql)
 
     implementation(project(":shared:domain"))
     implementation(project(":shared:infra"))
