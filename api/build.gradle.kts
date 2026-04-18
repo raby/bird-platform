@@ -25,4 +25,5 @@ dependencies {
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.spring.modulith.starter.test)
+    testImplementation(libs.archunit.junit5)
 }
