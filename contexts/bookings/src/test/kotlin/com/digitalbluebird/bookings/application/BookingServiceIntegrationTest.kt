@@ -27,7 +27,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.jdbc.datasource.DriverManagerDataSource
+import org.springframework.transaction.support.TransactionTemplate
 import org.testcontainers.DockerClientFactory
 import org.testcontainers.containers.PostgreSQLContainer
 import java.time.Clock
@@ -55,6 +57,7 @@ class BookingServiceIntegrationTest {
 
     private lateinit var service: BookingService
     private lateinit var jdbc: JdbcTemplate
+    private lateinit var tx: TransactionTemplate
 
     private val hideId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
     private val observerId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
@@ -76,6 +79,11 @@ class BookingServiceIntegrationTest {
 
         jdbc = JdbcTemplate(dataSource)
         val named = NamedParameterJdbcTemplate(dataSource)
+        // Each service call runs in its own transaction, mirroring the @Transactional boundary the
+        // Spring proxy applies in production. request() relies on it: the idempotency key and the
+        // booking it references are inserted in one transaction, and the deferred FK is validated at
+        // commit. It also makes the confirm-race below two genuinely concurrent transactions.
+        tx = TransactionTemplate(DataSourceTransactionManager(dataSource))
         service = BookingService(
             bookings = JdbcBookingRepository(named),
             idempotencyKeys = JdbcIdempotencyKeysRepository(named),
@@ -84,6 +92,9 @@ class BookingServiceIntegrationTest {
             objectMapper = objectMapper,
         )
     }
+
+    /** Run a service call in a transaction, as @Transactional would in the running app. */
+    private fun <T> inTx(block: () -> T): T = tx.execute { block() }!!
 
     @AfterAll
     fun tearDown() {
@@ -111,7 +122,7 @@ class BookingServiceIntegrationTest {
 
     @Test
     fun `request persists booking, idempotency key, and outbox entry atomically`() {
-        val result = service.request(command(key = "idem-firstreq-01"))
+        val result = inTx { service.request(command(key = "idem-firstreq-01")) }
 
         assertThat(result.isRight()).isTrue()
         val booking = result.getOrNull()!!
@@ -142,8 +153,8 @@ class BookingServiceIntegrationTest {
     @Test
     fun `re-using an idempotency key returns the same booking and writes no second row`() {
         val key = "idem-deduplicated-7"
-        val first = service.request(command(key = key)).getOrNull()!!
-        val second = service.request(command(key = key)).getOrNull()!!
+        val first = inTx { service.request(command(key = key)) }.getOrNull()!!
+        val second = inTx { service.request(command(key = key)) }.getOrNull()!!
 
         assertThat(second.id).isEqualTo(first.id)
 
@@ -155,16 +166,16 @@ class BookingServiceIntegrationTest {
 
     @Test
     fun `overlapping slot on same hide is rejected`() {
-        service.request(command(key = "idem-first-slot-1", startOffsetSec = 3600, endOffsetSec = 7200)).getOrNull()!!
-        val second = service.request(command(key = "idem-overlap-slot", startOffsetSec = 5400, endOffsetSec = 9000))
+        inTx { service.request(command(key = "idem-first-slot-1", startOffsetSec = 3600, endOffsetSec = 7200)) }.getOrNull()!!
+        val second = inTx { service.request(command(key = "idem-overlap-slot", startOffsetSec = 5400, endOffsetSec = 9000)) }
 
         assertThat(second.leftOrNull()!!).isInstanceOf(BookingError.HideSlotUnavailable::class)
     }
 
     @Test
     fun `confirm increments version and writes BookingConfirmed event`() {
-        val requested = service.request(command(key = "idem-confirm-flow")).getOrNull()!!
-        val confirmed = service.confirm(requested.id, expectedVersion = 0L).getOrNull()!!
+        val requested = inTx { service.request(command(key = "idem-confirm-flow")) }.getOrNull()!!
+        val confirmed = inTx { service.confirm(requested.id, expectedVersion = 0L) }.getOrNull()!!
 
         assertThat(confirmed.status).isEqualTo(BookingStatus.CONFIRMED)
         assertThat(confirmed.version).isEqualTo(1L)
@@ -185,7 +196,7 @@ class BookingServiceIntegrationTest {
 
     @Test
     fun `two concurrent confirms race and exactly one wins via optimistic locking`() {
-        val booking = service.request(command(key = "idem-race-setup")).getOrNull()!!
+        val booking = inTx { service.request(command(key = "idem-race-setup")) }.getOrNull()!!
 
         val executor = Executors.newFixedThreadPool(2)
         val start = CountDownLatch(1)
@@ -197,7 +208,7 @@ class BookingServiceIntegrationTest {
             executor.submit {
                 try {
                     start.await()
-                    val result = service.confirm(booking.id, expectedVersion = 0L)
+                    val result = inTx { service.confirm(booking.id, expectedVersion = 0L) }
                     result.fold(
                         ifLeft = { err ->
                             if (err is BookingError.VersionConflict) losers.incrementAndGet()
@@ -232,9 +243,9 @@ class BookingServiceIntegrationTest {
 
     @Test
     fun `cancel after confirm transitions through the state machine`() {
-        val requested = service.request(command(key = "idem-cancel-after")).getOrNull()!!
-        val confirmed = service.confirm(requested.id, expectedVersion = 0L).getOrNull()!!
-        val cancelled = service.cancel(confirmed.id, expectedVersion = 1L).getOrNull()!!
+        val requested = inTx { service.request(command(key = "idem-cancel-after")) }.getOrNull()!!
+        val confirmed = inTx { service.confirm(requested.id, expectedVersion = 0L) }.getOrNull()!!
+        val cancelled = inTx { service.cancel(confirmed.id, expectedVersion = 1L) }.getOrNull()!!
 
         assertThat(cancelled.status).isEqualTo(BookingStatus.CANCELLED)
         assertThat(cancelled.version).isEqualTo(2L)
@@ -248,10 +259,10 @@ class BookingServiceIntegrationTest {
 
     @Test
     fun `cancel cannot transition from already-cancelled state`() {
-        val requested = service.request(command(key = "idem-double-cancel")).getOrNull()!!
-        service.cancel(requested.id, expectedVersion = 0L).getOrNull()!!
+        val requested = inTx { service.request(command(key = "idem-double-cancel")) }.getOrNull()!!
+        inTx { service.cancel(requested.id, expectedVersion = 0L) }.getOrNull()!!
 
-        val second = service.cancel(requested.id, expectedVersion = 1L)
+        val second = inTx { service.cancel(requested.id, expectedVersion = 1L) }
         assertThat(second.leftOrNull()!!).isInstanceOf(BookingError.StateTransitionNotAllowed::class)
     }
 }
