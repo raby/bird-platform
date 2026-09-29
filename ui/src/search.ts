@@ -7,26 +7,11 @@ import { batch, computed, effect, signal } from '@raby/ripple'
 import type { Disposer } from '@raby/ripple'
 import { searchSpecies, type SpeciesResponse } from './api'
 import { list, on, scope, show, text } from './dom'
+import { el, humanizeStatus } from './util'
 
 const DEBOUNCE_MS = 250
 
 type Status = 'idle' | 'loading' | 'ok' | 'error'
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  attrs: Record<string, string> = {},
-  ...children: (Node | string)[]
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag)
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v)
-  for (const child of children) node.append(child)
-  return node
-}
-
-function humanizeStatus(status: string): string {
-  const lower = status.replace(/_/g, ' ').toLowerCase()
-  return lower.charAt(0).toUpperCase() + lower.slice(1)
-}
 
 function renderRow(s: SpeciesResponse): HTMLLIElement {
   const en = s.commonNames.find((c) => c.language === 'en')?.name ?? s.scientificName

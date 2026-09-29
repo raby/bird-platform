@@ -17,6 +17,7 @@ import {
   type HideResponse,
 } from './api'
 import { attr, classes, on, scope, show, text } from './dom'
+import { el, humanizeStatus, newIdempotencyKey, shortId } from './util'
 
 // The demo backend has no auth, so bookings are made as one fixed seeded observer.
 const DEMO_OBSERVER = '22222222-2222-2222-2222-222222222222'
@@ -40,36 +41,13 @@ function slot(daysAhead: number, hour: number): Slot {
 
 const SLOTS: readonly Slot[] = [slot(1, 8), slot(1, 14), slot(2, 8), slot(2, 14)]
 
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  attrs: Record<string, string> = {},
-  ...children: (Node | string)[]
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag)
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v)
-  for (const child of children) node.append(child)
-  return node
-}
-
 function field(id: string, label: string, input: HTMLElement): HTMLElement {
   return el('label', { class: 'field', for: id }, el('span', { class: 'field__label' }, label), input)
-}
-
-function newIdempotencyKey(): string {
-  return `book-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
 function clampParty(n: number): number {
   if (Number.isNaN(n)) return 1
   return Math.min(Math.max(Math.trunc(n), 1), 20)
-}
-
-function humanizeStatus(status: string): string {
-  return status.charAt(0) + status.slice(1).toLowerCase()
-}
-
-function shortId(id: string): string {
-  return id.slice(0, 8)
 }
 
 function slotLabelFor(b: BookingResponse): string {
@@ -156,7 +134,7 @@ export function mountBookingFlow(root: HTMLElement): Disposer {
       message('Requesting…')
     })
     const res = await createBooking({
-      idempotencyKey: newIdempotencyKey(),
+      idempotencyKey: newIdempotencyKey('book'),
       hideId: hid,
       observerId: DEMO_OBSERVER,
       slotStart: sl.start,

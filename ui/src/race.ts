@@ -7,6 +7,7 @@ import { batch, signal } from '@raby/ripple'
 import type { Disposer } from '@raby/ripple'
 import { confirmBooking, createBooking, getBooking, type BookingResponse } from './api'
 import { attr, classes, on, scope, show, text } from './dom'
+import { el, humanizeStatus, newIdempotencyKey, shortId } from './util'
 
 const DEMO_OBSERVER = '22222222-2222-2222-2222-222222222222'
 const RACE_HIDE = '10000000-0000-0000-0000-000000000001' // Kingfisher Hide
@@ -18,29 +19,6 @@ function uniqueSlot(): { start: string; end: string } {
   const start = new Date(Date.UTC(2027, 0, 1, 8) + raceSeq * 24 * 60 * 60 * 1000)
   const end = new Date(start.getTime() + 2 * 60 * 60 * 1000)
   return { start: start.toISOString(), end: end.toISOString() }
-}
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  attrs: Record<string, string> = {},
-  ...children: (Node | string)[]
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag)
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v)
-  for (const child of children) node.append(child)
-  return node
-}
-
-function newIdempotencyKey(): string {
-  return `race-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
-}
-
-function shortId(id: string): string {
-  return id.slice(0, 8)
-}
-
-function humanizeStatus(status: string): string {
-  return status.charAt(0) + status.slice(1).toLowerCase()
 }
 
 type Outcome = 'idle' | 'busy' | 'won' | 'conflict' | 'refreshed'
@@ -164,7 +142,7 @@ export function mountRaceDemo(root: HTMLElement): Disposer {
       setupNote('Setting up a booking…')
       idemNote('')
     })
-    const key = newIdempotencyKey()
+    const key = newIdempotencyKey('race')
     const slot = uniqueSlot()
     const res = await createBooking({
       idempotencyKey: key,

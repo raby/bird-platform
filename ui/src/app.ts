@@ -1,25 +1,15 @@
-// App shell: a top bar that switches between the booking flow and species search. The active view
-// is a ripple signal — the nav toggles it, `classes` reflects the active tab, and `show` mounts one
-// view at a time. Both features stay mounted (state is preserved when switching).
+// App shell: a top bar that switches between the booking flow, the version-race demo and species
+// search. The active view is a ripple signal — the nav toggles it, `classes` reflects the active
+// tab, and `show` mounts one view at a time. All features stay mounted (state is preserved on switch).
 import { signal } from '@raby/ripple'
 import type { Disposer } from '@raby/ripple'
 import { mountBookingFlow } from './booking'
 import { attr, classes, on, scope, show } from './dom'
 import { mountRaceDemo } from './race'
 import { mountSpeciesSearch } from './search'
+import { el } from './util'
 
 type View = 'book' | 'race' | 'search'
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  attrs: Record<string, string> = {},
-  ...children: (Node | string)[]
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag)
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v)
-  for (const child of children) node.append(child)
-  return node
-}
 
 export function mountApp(root: HTMLElement): Disposer {
   const view = signal<View>('book')
