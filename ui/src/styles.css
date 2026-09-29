@@ -1,0 +1,161 @@
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --border: #e2e5ea;
+  --text: #1a1d23;
+  --muted: #5c6470;
+  --accent: #2f6f4f;
+  --accent-weak: #e8f2ec;
+  --shadow: 0 1px 2px rgba(20, 24, 33, 0.06), 0 4px 16px rgba(20, 24, 33, 0.05);
+
+  --status-lc: #2f8f5b;
+  --status-nt: #7a9a3a;
+  --status-vu: #c98a1e;
+  --status-en: #d9651f;
+  --status-cr: #cc3b34;
+  --status-ex: #5c6470;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a;
+    --surface: #1c1f25;
+    --border: #2b2f38;
+    --text: #eceef2;
+    --muted: #9aa2af;
+    --accent: #5fb98a;
+    --accent-weak: #1e2a24;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 16px 96px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 4px 0 28px;
+  color: var(--muted);
+}
+
+.search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.search label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.search input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.search input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.status {
+  min-height: 1.25rem;
+  margin: 16px 2px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result {
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.result__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.result__name {
+  font-weight: 600;
+}
+
+.result__sci {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.result__taxo {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.badge {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--status-ex);
+  white-space: nowrap;
+}
+
+.badge--LEAST_CONCERN {
+  background: var(--status-lc);
+}
+.badge--NEAR_THREATENED {
+  background: var(--status-nt);
+}
+.badge--VULNERABLE {
+  background: var(--status-vu);
+}
+.badge--ENDANGERED {
+  background: var(--status-en);
+}
+.badge--CRITICALLY_ENDANGERED {
+  background: var(--status-cr);
+}

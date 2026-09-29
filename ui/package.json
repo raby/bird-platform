@@ -1,0 +1,28 @@
+{
+  "name": "bird-platform-ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fine-grained SPA for the bird-platform REST API, hand-built on @raby/ripple (no framework). The flagship real-world consumer that dogfoods ripple.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@raby/ripple": "file:../../ripple"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "jsdom": "^25.0.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.1",
+    "vite": "^6.0.7",
+    "vitest": "^5.0.2"
+  }
+}
