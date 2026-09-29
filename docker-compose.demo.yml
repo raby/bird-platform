@@ -1,0 +1,38 @@
+# The whole bird-platform as a single "try it live" demo: the Spring Boot app (demo profile,
+# Postgres-only, with the ripple SPA served from the same origin) plus a Postgres. No Elasticsearch
+# and no Redis — species search runs on the in-JVM demo read model, and the booking flow is entirely
+# Postgres-backed. Bring it up with:
+#
+#   docker compose -f docker-compose.demo.yml up --build
+#
+# then open http://localhost:8080. Postgres is intentionally volume-less: every run starts clean, so
+# the seeded hides are pristine and no demo bookings leak between sessions.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bird-platform-demo
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bird_platform
+      SPRING_DATASOURCE_USERNAME: bird_platform
+      SPRING_DATASOURCE_PASSWORD: bird_platform
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bird-platform-demo-postgres
+    environment:
+      POSTGRES_DB: bird_platform
+      POSTGRES_USER: bird_platform
+      POSTGRES_PASSWORD: bird_platform
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bird_platform -d bird_platform"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

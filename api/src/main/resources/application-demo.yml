@@ -1,0 +1,15 @@
+# `demo` profile: the whole platform on Postgres alone, for the live "try it live" demo and the
+# docker-compose.demo.yml container. Everything else (datasource, Flyway locations, outbox poll,
+# server port, actuator) is inherited from application.yml; the container overrides the datasource
+# URL via SPRING_DATASOURCE_URL to reach the `postgres` service.
+#
+# Species search normally rides on Elasticsearch; the demo swaps in an in-JVM read model
+# (InMemorySpeciesReadModel, wired in SpeciesConfiguration under @Profile("demo")), so there is no ES
+# to stand up. Excluding the ES autoconfiguration keeps Spring from creating an unused client and an
+# ES health contributor that would report DOWN with no server behind it.
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticsearchRestClientHealthContributorAutoConfiguration
