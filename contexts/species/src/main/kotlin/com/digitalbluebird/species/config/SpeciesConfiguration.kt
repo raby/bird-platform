@@ -5,8 +5,6 @@ import com.digitalbluebird.species.adapter.outbound.elasticsearch.ElasticsearchS
 import com.digitalbluebird.species.adapter.outbound.taxonomy.StubTaxonomyGateway
 import com.digitalbluebird.species.application.SpeciesImportService
 import com.digitalbluebird.species.application.SpeciesSearchService
-import com.digitalbluebird.species.domain.port.inbound.ImportTaxonomyUseCase
-import com.digitalbluebird.species.domain.port.inbound.SearchSpeciesUseCase
 import com.digitalbluebird.species.domain.port.outbound.SpeciesReadModel
 import com.digitalbluebird.species.domain.port.outbound.TaxonomyGateway
 import org.springframework.context.annotation.Bean
@@ -22,6 +20,9 @@ class SpeciesConfiguration {
     fun speciesReadModel(client: ElasticsearchClient): SpeciesReadModel =
         ElasticsearchSpeciesReadModel(client)
 
+    // SpeciesController injects the inbound ports (ImportTaxonomyUseCase, SearchSpeciesUseCase); each
+    // resolves to its single concrete service bean below. A second, interface-typed bean for the same
+    // instance would make that port injection ambiguous (NoUniqueBeanDefinitionException at startup).
     @Bean
     fun speciesImportService(gateway: TaxonomyGateway, readModel: SpeciesReadModel): SpeciesImportService =
         SpeciesImportService(gateway, readModel)
@@ -29,10 +30,4 @@ class SpeciesConfiguration {
     @Bean
     fun speciesSearchService(readModel: SpeciesReadModel): SpeciesSearchService =
         SpeciesSearchService(readModel)
-
-    @Bean
-    fun importTaxonomyUseCase(service: SpeciesImportService): ImportTaxonomyUseCase = service
-
-    @Bean
-    fun searchSpeciesUseCase(service: SpeciesSearchService): SearchSpeciesUseCase = service
 }
