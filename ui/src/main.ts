@@ -1,5 +1,5 @@
 import './styles.css'
-import { mountSpeciesSearch } from './search'
+import { mountApp } from './app'
 
 const root = document.querySelector<HTMLElement>('#app')
-if (root) mountSpeciesSearch(root)
+if (root) mountApp(root)

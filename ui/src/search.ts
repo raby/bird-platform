@@ -81,8 +81,8 @@ export function mountSpeciesSearch(root: HTMLElement): Disposer {
     el(
       'header',
       {},
-      el('h1', {}, 'bird-platform'),
-      el('p', { class: 'tagline' }, 'Fuzzy species search over the taxonomy read model.'),
+      el('h2', {}, 'Find a species'),
+      el('p', { class: 'tagline' }, 'Fuzzy search over the taxonomy read model.'),
     ),
     form,
     statusLine,
