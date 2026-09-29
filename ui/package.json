@@ -14,7 +14,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@raby/ripple": "file:../../ripple"
+    "@raby/ripple": "^0.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
