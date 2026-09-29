@@ -128,6 +128,9 @@ open class BookingService(
                     bookingId = confirmed.id.value.toString(),
                     hideId = confirmed.hideId.value.toString(),
                     observerId = confirmed.observerId.value.toString(),
+                    slotStart = confirmed.slot.start,
+                    slotEnd = confirmed.slot.endExclusive,
+                    partySize = confirmed.partySize.value,
                     occurredAt = now,
                 )
                 MutationResult(

@@ -15,6 +15,11 @@ spring:
   elasticsearch:
     uris: http://localhost:9200
 
+bird:
+  outbox:
+    # How often the OutboxPoller drains the outbox into the read-model projections.
+    poll-delay-ms: 1000
+
 server:
   port: 8080
 

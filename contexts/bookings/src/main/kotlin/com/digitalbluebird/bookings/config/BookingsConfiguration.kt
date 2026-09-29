@@ -1,13 +1,16 @@
 package com.digitalbluebird.bookings.config
 
 import com.digitalbluebird.bookings.adapter.outbound.persistence.JdbcBookingRepository
+import com.digitalbluebird.bookings.adapter.outbound.persistence.JdbcHideAvailabilityReadModel
 import com.digitalbluebird.bookings.adapter.outbound.persistence.JdbcIdempotencyKeysRepository
 import com.digitalbluebird.bookings.application.BookingService
+import com.digitalbluebird.bookings.application.HideAvailabilityProjector
 import com.digitalbluebird.bookings.domain.port.inbound.CancelBookingUseCase
 import com.digitalbluebird.bookings.domain.port.inbound.ConfirmBookingUseCase
 import com.digitalbluebird.bookings.domain.port.inbound.FindBookingUseCase
 import com.digitalbluebird.bookings.domain.port.inbound.RequestBookingUseCase
 import com.digitalbluebird.bookings.domain.port.outbound.BookingRepository
+import com.digitalbluebird.bookings.domain.port.outbound.HideAvailabilityReadModel
 import com.digitalbluebird.bookings.domain.port.outbound.IdempotencyKeysRepository
 import com.digitalbluebird.shared.infra.outbox.OutboxRepository
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -47,4 +50,16 @@ class BookingsConfiguration {
 
     @Bean
     fun findBookingUseCase(bookingService: BookingService): FindBookingUseCase = bookingService
+
+    @Bean
+    fun hideAvailabilityReadModel(jdbc: NamedParameterJdbcTemplate): HideAvailabilityReadModel =
+        JdbcHideAvailabilityReadModel(jdbc)
+
+    // Registered as an OutboxHandler bean; the shared OutboxRelay collects it and drives the
+    // hide-availability projection off BookingConfirmed / BookingCancelled events.
+    @Bean
+    fun hideAvailabilityProjector(
+        readModel: HideAvailabilityReadModel,
+        objectMapper: ObjectMapper,
+    ): HideAvailabilityProjector = HideAvailabilityProjector(readModel, objectMapper)
 }
