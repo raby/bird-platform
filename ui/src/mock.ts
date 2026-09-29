@@ -216,6 +216,12 @@ export function mockCancelBooking(id: string, expectedVersion: number): Promise<
   return transition(id, expectedVersion, 'CANCELLED', ['REQUESTED', 'CONFIRMED'])
 }
 
+export function mockGetBooking(id: string): Promise<BookingResult> {
+  const current = bookings.get(id)
+  if (!current) return later(fail('BookingNotFound', `booking not found: ${id}`))
+  return later({ ok: true, booking: current })
+}
+
 /** Test-only: clear the in-memory booking store between cases. */
 export function __resetMockBookings(): void {
   bookings.clear()

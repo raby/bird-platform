@@ -6,6 +6,7 @@ import {
   mockConfirmBooking,
   mockCreateBooking,
   mockGetAvailability,
+  mockGetBooking,
   mockListHides,
   mockSearchSpecies,
 } from './mock'
@@ -154,6 +155,14 @@ export async function confirmBooking(id: string, expectedVersion: number): Promi
 export async function cancelBooking(id: string, expectedVersion: number): Promise<BookingResult> {
   if (useMock) return mockCancelBooking(id, expectedVersion)
   return postBooking(`${API_BASE}/bookings/${encodeURIComponent(id)}/cancel`, { expectedVersion }, 200)
+}
+
+/** `GET /bookings/{id}` → the current booking (used to refresh a panel that lost the race). */
+export async function getBooking(id: string): Promise<BookingResult> {
+  if (useMock) return mockGetBooking(id)
+  const res = await fetch(`${API_BASE}/bookings/${encodeURIComponent(id)}`)
+  if (res.ok) return { ok: true, booking: (await res.json()) as BookingResponse }
+  return { ok: false, error: await errorFrom(res) }
 }
 
 async function postBooking(url: string, body: unknown, okStatus: number): Promise<BookingResult> {
