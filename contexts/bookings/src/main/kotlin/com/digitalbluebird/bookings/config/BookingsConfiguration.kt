@@ -5,6 +5,7 @@ import com.digitalbluebird.bookings.adapter.outbound.persistence.JdbcHideAvailab
 import com.digitalbluebird.bookings.adapter.outbound.persistence.JdbcIdempotencyKeysRepository
 import com.digitalbluebird.bookings.application.BookingService
 import com.digitalbluebird.bookings.application.HideAvailabilityProjector
+import com.digitalbluebird.bookings.application.HideAvailabilityQueryService
 import com.digitalbluebird.bookings.domain.port.inbound.CancelBookingUseCase
 import com.digitalbluebird.bookings.domain.port.inbound.ConfirmBookingUseCase
 import com.digitalbluebird.bookings.domain.port.inbound.FindBookingUseCase
@@ -62,4 +63,12 @@ class BookingsConfiguration {
         readModel: HideAvailabilityReadModel,
         objectMapper: ObjectMapper,
     ): HideAvailabilityProjector = HideAvailabilityProjector(readModel, objectMapper)
+
+    // One bean per service, typed as the concrete class; HideController injects the
+    // ViewHideAvailabilityUseCase port, which resolves to this single implementation. (Declaring a
+    // second, interface-typed bean for the same instance makes the port injection ambiguous —
+    // NoUniqueBeanDefinitionException — which is why the older use-case beans are being removed too.)
+    @Bean
+    fun hideAvailabilityQueryService(readModel: HideAvailabilityReadModel): HideAvailabilityQueryService =
+        HideAvailabilityQueryService(readModel)
 }
