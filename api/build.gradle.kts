@@ -9,6 +9,7 @@ dependencies {
     implementation(libs.spring.boot.starter.jdbc)
     implementation(libs.spring.modulith.starter.core)
     implementation(libs.jackson.module.kotlin)
+    implementation(libs.arrow.core) // the permits saga branches on bookings' Either<BookingError, Booking>
 
     runtimeOnly(libs.postgresql)
     runtimeOnly(libs.flyway.core)
@@ -31,4 +32,6 @@ dependencies {
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.spring.modulith.starter.test)
     testImplementation(libs.archunit.junit5)
+    testImplementation(libs.mockk)
+    testImplementation(libs.assertk)
 }
