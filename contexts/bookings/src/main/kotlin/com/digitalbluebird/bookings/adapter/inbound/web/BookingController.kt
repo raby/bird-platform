@@ -1,5 +1,6 @@
 package com.digitalbluebird.bookings.adapter.inbound.web
 
+import com.digitalbluebird.bookings.adapter.outbound.persistence.OverlappingSlotException
 import com.digitalbluebird.bookings.domain.BookingError
 import com.digitalbluebird.bookings.domain.BookingId
 import com.digitalbluebird.bookings.domain.port.inbound.CancelBookingUseCase
@@ -9,6 +10,7 @@ import com.digitalbluebird.bookings.domain.port.inbound.RequestBookingCommand
 import com.digitalbluebird.bookings.domain.port.inbound.RequestBookingUseCase
 import com.digitalbluebird.shared.domain.DomainError
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -71,6 +73,15 @@ class BookingController(
             ifRight = { ResponseEntity.ok(BookingResponse.from(it)) },
         )
     }
+
+    // The V303 exclusion constraint rejected an overlapping active booking under a race that passed
+    // BookingService's pre-check (JdbcBookingRepository throws OverlappingSlotException; the failed
+    // INSERT rolled the request's transaction back). Map it to the same 409 + "HideSlotUnavailable"
+    // body the pre-check path returns via BookingError.HideSlotUnavailable, so the race-loser and the
+    // common-case overlap are indistinguishable to the client.
+    @ExceptionHandler(OverlappingSlotException::class)
+    fun handleOverlappingSlot(e: OverlappingSlotException): ResponseEntity<Any> =
+        ResponseEntity.status(409).body(ErrorResponse(code = "HideSlotUnavailable", message = e.message ?: "hide slot unavailable"))
 
     private fun withBookingId(id: String, block: (BookingId) -> ResponseEntity<Any>): ResponseEntity<Any> =
         runCatching { BookingId(UUID.fromString(id)) }.fold(

@@ -2,8 +2,10 @@ package com.digitalbluebird.bookings.application
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isTrue
+import com.digitalbluebird.bookings.adapter.outbound.persistence.OverlappingSlotException
 import com.digitalbluebird.bookings.domain.Booking
 import com.digitalbluebird.bookings.domain.BookingError
 import com.digitalbluebird.bookings.domain.BookingId
@@ -133,6 +135,22 @@ class BookingServiceTest {
         assertThat(result.leftOrNull()!!).isInstanceOf(BookingError.HideSlotUnavailable::class)
         verify(exactly = 0) { bookings.insert(any()) }
         verify(exactly = 0) { idempotencyKeys.register(any(), any()) }
+    }
+
+    @Test
+    fun `request propagates an exclusion-constraint conflict so the transaction rolls back`() {
+        every { idempotencyKeys.findBookingId(any()) } returns null
+        every { bookings.hasOverlappingActiveBooking(any(), any()) } returns false
+        every { idempotencyKeys.register(any(), any()) } returns true
+        // The slot passed the pre-check but the storage-layer exclusion constraint rejected the
+        // insert (a race). The service must NOT swallow it: the failed INSERT aborted the
+        // transaction, so it has to propagate to trigger the @Transactional rollback; the web layer
+        // maps it to the same 409 HideSlotUnavailable the pre-check path returns.
+        every { bookings.insert(any()) } throws OverlappingSlotException(HideId(hideId))
+
+        assertThat(runCatching { service.request(validCommand()) })
+            .isFailure().isInstanceOf(OverlappingSlotException::class)
+        verify(exactly = 0) { outbox.save(any()) }
     }
 
     @Test

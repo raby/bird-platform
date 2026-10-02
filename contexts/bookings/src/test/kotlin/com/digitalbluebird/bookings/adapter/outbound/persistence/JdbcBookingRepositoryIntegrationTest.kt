@@ -2,7 +2,9 @@ package com.digitalbluebird.bookings.adapter.outbound.persistence
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFailure
 import assertk.assertions.isFalse
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
@@ -177,5 +179,37 @@ class JdbcBookingRepositoryIntegrationTest {
 
         val sameSlot = existing.slot
         assertThat(repository.hasOverlappingActiveBooking(HideId(hideA), sameSlot)).isFalse()
+    }
+
+    // ── V303: the slot-exclusivity constraint, the storage-layer backstop behind the pre-check ──
+
+    @Test
+    fun `insert is rejected by the exclusion constraint for an overlapping active booking`() {
+        repository.insert(newBooking(startOffsetSec = 3600, endOffsetSec = 7200))
+        // Same hide, overlapping slot, both active: the constraint must reject the second insert,
+        // surfaced as OverlappingSlotException (regardless of the service-layer pre-check).
+        assertThat(runCatching { repository.insert(newBooking(startOffsetSec = 5400, endOffsetSec = 10800)) })
+            .isFailure().isInstanceOf(OverlappingSlotException::class)
+    }
+
+    @Test
+    fun `insert allows a touching slot and a different hide`() {
+        repository.insert(newBooking(startOffsetSec = 3600, endOffsetSec = 7200))
+        // Adjacent half-open [) ranges touch at 7200 but do not overlap.
+        assertThat(repository.insert(newBooking(startOffsetSec = 7200, endOffsetSec = 10800))).isNotNull()
+        // A different hide is unaffected by the constraint.
+        assertThat(repository.insert(newBooking(hide = hideB, startOffsetSec = 5400, endOffsetSec = 10800))).isNotNull()
+    }
+
+    @Test
+    fun `insert reuses a slot freed by cancellation`() {
+        val first = newBooking(startOffsetSec = 3600, endOffsetSec = 7200)
+        repository.insert(first)
+        repository.updateIfVersionMatches(
+            first.copy(status = BookingStatus.CANCELLED, updatedAt = baseTime.plusSeconds(5)),
+            expectedVersion = 0L,
+        )
+        // The cancelled booking drops out of the partial constraint, so the slot is bookable again.
+        assertThat(repository.insert(newBooking(startOffsetSec = 3600, endOffsetSec = 7200))).isNotNull()
     }
 }

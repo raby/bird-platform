@@ -8,9 +8,11 @@ import com.digitalbluebird.bookings.domain.PartySize
 import com.digitalbluebird.bookings.domain.port.outbound.BookingRepository
 import com.digitalbluebird.shared.domain.InstantRange
 import com.digitalbluebird.shared.domain.ObserverId
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.sql.ResultSet
+import java.sql.SQLException
 import java.sql.Timestamp
 import java.util.UUID
 
@@ -31,18 +33,37 @@ class JdbcBookingRepository(
             .addValue("created_at", Timestamp.from(booking.createdAt))
             .addValue("updated_at", Timestamp.from(booking.updatedAt))
 
-        jdbc.update(
-            """
-            INSERT INTO bookings.bookings
-                (id, hide_id, observer_id, slot_start, slot_end, party_size,
-                 status, version, created_at, updated_at)
-            VALUES
-                (:id, :hide_id, :observer_id, :slot_start, :slot_end, :party_size,
-                 :status, :version, :created_at, :updated_at)
-            """.trimIndent(),
-            params,
-        )
+        try {
+            jdbc.update(
+                """
+                INSERT INTO bookings.bookings
+                    (id, hide_id, observer_id, slot_start, slot_end, party_size,
+                     status, version, created_at, updated_at)
+                VALUES
+                    (:id, :hide_id, :observer_id, :slot_start, :slot_end, :party_size,
+                     :status, :version, :created_at, :updated_at)
+                """.trimIndent(),
+                params,
+            )
+        } catch (e: DataIntegrityViolationException) {
+            // The bookings_no_overlapping_active_slot exclusion constraint (V303) rejected an
+            // overlapping active booking — the storage-layer guard firing under a race. Surface it as
+            // a semantic signal; any other integrity violation is a real fault and propagates as-is.
+            if (isSlotExclusionViolation(e)) throw OverlappingSlotException(booking.hideId, e)
+            throw e
+        }
         return booking
+    }
+
+    // Postgres raises SQLSTATE 23P01 (exclusion_violation) for the slot constraint. Walk the cause
+    // chain rather than matching on the message text, so detection is driver- and locale-independent.
+    private fun isSlotExclusionViolation(error: Throwable): Boolean {
+        var cause: Throwable? = error
+        while (cause != null) {
+            if (cause is SQLException && cause.sqlState == EXCLUSION_VIOLATION_SQLSTATE) return true
+            cause = cause.cause
+        }
+        return false
     }
 
     override fun findById(id: BookingId): Booking? {
@@ -115,4 +136,8 @@ class JdbcBookingRepository(
         createdAt = rs.getTimestamp("created_at").toInstant(),
         updatedAt = rs.getTimestamp("updated_at").toInstant(),
     )
+
+    private companion object {
+        const val EXCLUSION_VIOLATION_SQLSTATE = "23P01"
+    }
 }

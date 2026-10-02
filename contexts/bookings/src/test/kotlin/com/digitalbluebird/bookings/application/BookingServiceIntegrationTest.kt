@@ -8,6 +8,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isTrue
 import com.digitalbluebird.bookings.adapter.outbound.persistence.JdbcBookingRepository
 import com.digitalbluebird.bookings.adapter.outbound.persistence.JdbcIdempotencyKeysRepository
+import com.digitalbluebird.bookings.adapter.outbound.persistence.OverlappingSlotException
 import com.digitalbluebird.bookings.domain.BookingError
 import com.digitalbluebird.bookings.domain.BookingStatus
 import com.digitalbluebird.bookings.domain.event.BookingConfirmedEvent
@@ -264,5 +265,53 @@ class BookingServiceIntegrationTest {
 
         val second = inTx { service.cancel(requested.id, expectedVersion = 1L) }
         assertThat(second.leftOrNull()!!).isInstanceOf(BookingError.StateTransitionNotAllowed::class)
+    }
+
+    @Test
+    fun `two concurrent requests for an overlapping slot yield exactly one booking`() {
+        val executor = Executors.newFixedThreadPool(2)
+        val start = CountDownLatch(1)
+        val done = CountDownLatch(2)
+        val successes = java.util.concurrent.atomic.AtomicInteger()
+        val rejections = java.util.concurrent.atomic.AtomicInteger()
+
+        repeat(2) { i ->
+            executor.submit {
+                try {
+                    start.await()
+                    // Same hide, same (overlapping) slot, distinct idempotency keys — so slot
+                    // exclusivity, not idempotency, decides the winner. The loser is rejected either
+                    // by the pre-check (Left HideSlotUnavailable) or, if both passed it before either
+                    // committed, by the V303 exclusion constraint (OverlappingSlotException); the test
+                    // accepts either, since both are the same 409 to a client.
+                    runCatching {
+                        inTx { service.request(command(key = "idem-slotrace-$i", startOffsetSec = 3600, endOffsetSec = 7200)) }
+                    }.fold(
+                        onSuccess = { either ->
+                            either.fold(
+                                ifLeft = { if (it is BookingError.HideSlotUnavailable) rejections.incrementAndGet() },
+                                ifRight = { successes.incrementAndGet() },
+                            )
+                        },
+                        onFailure = { if (it is OverlappingSlotException) rejections.incrementAndGet() },
+                    )
+                } finally {
+                    done.countDown()
+                }
+            }
+        }
+        start.countDown()
+        assertThat(done.await(10, TimeUnit.SECONDS)).isTrue()
+        executor.shutdown()
+
+        assertThat(successes.get()).isEqualTo(1)
+        assertThat(rejections.get()).isEqualTo(1)
+
+        // The storage-layer guarantee: exactly one active booking exists, whichever guard fired.
+        val activeCount = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM bookings.bookings WHERE status <> 'CANCELLED'",
+            Long::class.java,
+        )
+        assertThat(activeCount).isEqualTo(1L)
     }
 }
