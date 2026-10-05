@@ -13,6 +13,7 @@ spring:
       - classpath:db/migration/observations
       - classpath:db/migration/bookings
       - classpath:db/migration/permits
+      - classpath:db/migration/surveys
   elasticsearch:
     uris: http://localhost:9200
 
