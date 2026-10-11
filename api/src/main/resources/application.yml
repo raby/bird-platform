@@ -1,6 +1,12 @@
 spring:
   application:
     name: bird-platform
+  task:
+    scheduling:
+      # One thread per @Scheduled poller (outbox relay, notification dispatch, eBird dispatch) so a
+      # poller that backs off on retries never stalls the others on a shared single scheduler thread.
+      pool:
+        size: 4
   datasource:
     url: jdbc:postgresql://localhost:5432/bird_platform
     username: bird_platform
@@ -15,6 +21,7 @@ spring:
       - classpath:db/migration/permits
       - classpath:db/migration/surveys
       - classpath:db/migration/notifications
+      - classpath:db/migration/ebird
   elasticsearch:
     uris: http://localhost:9200
 
@@ -22,6 +29,15 @@ bird:
   outbox:
     # How often the OutboxPoller drains the outbox into the read-model projections.
     poll-delay-ms: 1000
+  ebird:
+    # How often the dispatcher pushes pending sightings to eBird.
+    dispatch-delay-ms: 2000
+    # Dead-letter a submission after this many real (non-circuit-open) failed attempts.
+    max-attempts: 5
+    circuit:
+      # Consecutive failed calls before the breaker opens, and how long it stays open before probing.
+      failure-threshold: 3
+      reset-timeout-ms: 10000
 
 server:
   port: 8080
