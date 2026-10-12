@@ -23,6 +23,7 @@ spring:
       - classpath:db/migration/notifications
       - classpath:db/migration/ebird
       - classpath:db/migration/expeditions
+      - classpath:db/migration/reserves
   elasticsearch:
     uris: http://localhost:9200
 
