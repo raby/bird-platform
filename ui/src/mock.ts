@@ -1,6 +1,6 @@
 // In-memory stand-in for the backend's species search, used when VITE_API_BASE is unset so the
 // SPA runs with no backend. The data is the exact seed the backend's StubTaxonomyGateway serves
-// (contexts/species/.../StubTaxonomyGateway.kt) — same five species, same IUCN statuses, same
+// (contexts/species/.../StubTaxonomyGateway.kt) — same eleven species, same IUCN statuses, same
 // ids (`scientificName` lowercased, spaces → hyphens). The only fidelity trade is Elasticsearch's
 // fuzzy ranking → a simple local matcher; that same swap is the design's "demo profile" story.
 import type {
@@ -44,6 +44,12 @@ const SEED: readonly SpeciesResponse[] = [
   species('Apus apus', 'Common Swift', 'Gierzwaluw', 'Apodiformes', 'Apodidae', 'Apus', 'LEAST_CONCERN'),
   species('Falco peregrinus', 'Peregrine Falcon', 'Slechtvalk', 'Falconiformes', 'Falconidae', 'Falco', 'LEAST_CONCERN'),
   species('Streptopelia turtur', 'European Turtle Dove', 'Tortelduif', 'Columbiformes', 'Columbidae', 'Streptopelia', 'VULNERABLE'),
+  species('Alcedo atthis', 'Common Kingfisher', 'IJsvogel', 'Coraciiformes', 'Alcedinidae', 'Alcedo', 'LEAST_CONCERN'),
+  species('Pandion haliaetus', 'Western Osprey', 'Visarend', 'Accipitriformes', 'Pandionidae', 'Pandion', 'LEAST_CONCERN'),
+  species('Botaurus stellaris', 'Eurasian Bittern', 'Roerdomp', 'Pelecaniformes', 'Ardeidae', 'Botaurus', 'LEAST_CONCERN'),
+  species('Tyto alba', 'Barn Owl', 'Kerkuil', 'Strigiformes', 'Tytonidae', 'Tyto', 'LEAST_CONCERN'),
+  species('Curruca undata', 'Dartford Warbler', 'Provençaalse Grasmus', 'Passeriformes', 'Sylviidae', 'Curruca', 'NEAR_THREATENED'),
+  species('Panurus biarmicus', 'Bearded Reedling', 'Baardman', 'Passeriformes', 'Panuridae', 'Panurus', 'LEAST_CONCERN'),
 ]
 
 /** A cheap fuzzy score: exact = 4, prefix = 3, substring = 2, in-order subsequence = 1, else 0. */

@@ -34,6 +34,12 @@ class StubTaxonomyAuthority : TaxonomyAuthority {
             Taxon("Apus apus", "Common Swift", "Apodidae", "Apodiformes", "LEAST_CONCERN"),
             Taxon("Falco peregrinus", "Peregrine Falcon", "Falconidae", "Falconiformes", "LEAST_CONCERN"),
             Taxon("Streptopelia turtur", "European Turtle Dove", "Columbidae", "Columbiformes", "VULNERABLE"),
+            Taxon("Alcedo atthis", "Common Kingfisher", "Alcedinidae", "Coraciiformes", "LEAST_CONCERN"),
+            Taxon("Pandion haliaetus", "Western Osprey", "Pandionidae", "Accipitriformes", "LEAST_CONCERN"),
+            Taxon("Botaurus stellaris", "Eurasian Bittern", "Ardeidae", "Pelecaniformes", "LEAST_CONCERN"),
+            Taxon("Tyto alba", "Barn Owl", "Tytonidae", "Strigiformes", "LEAST_CONCERN"),
+            Taxon("Curruca undata", "Dartford Warbler", "Sylviidae", "Passeriformes", "NEAR_THREATENED"),
+            Taxon("Panurus biarmicus", "Bearded Reedling", "Panuridae", "Passeriformes", "LEAST_CONCERN"),
         ).associateBy { it.scientificName }
     }
 }

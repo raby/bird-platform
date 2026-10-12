@@ -48,6 +48,15 @@ class StubTaxonomyGateway : TaxonomyGateway {
             ExternalSpeciesDto("Apus apus", "Common Swift", "Gierzwaluw", "Apodiformes", "Apodidae", "Apus", "LC"),
             ExternalSpeciesDto("Falco peregrinus", "Peregrine Falcon", "Slechtvalk", "Falconiformes", "Falconidae", "Falco", "LC"),
             ExternalSpeciesDto("Streptopelia turtur", "European Turtle Dove", "Tortelduif", "Columbiformes", "Columbidae", "Streptopelia", "VU"),
+            // The hide namesakes (the bookings seed has a Kingfisher Hide, Osprey Platform and
+            // Bittern Screen) plus a few Schedule 1 birds whose ringing needs a licence endorsement —
+            // a wider, more realistic catalogue spanning several orders and conservation statuses.
+            ExternalSpeciesDto("Alcedo atthis", "Common Kingfisher", "IJsvogel", "Coraciiformes", "Alcedinidae", "Alcedo", "LC"),
+            ExternalSpeciesDto("Pandion haliaetus", "Western Osprey", "Visarend", "Accipitriformes", "Pandionidae", "Pandion", "LC"),
+            ExternalSpeciesDto("Botaurus stellaris", "Eurasian Bittern", "Roerdomp", "Pelecaniformes", "Ardeidae", "Botaurus", "LC"),
+            ExternalSpeciesDto("Tyto alba", "Barn Owl", "Kerkuil", "Strigiformes", "Tytonidae", "Tyto", "LC"),
+            ExternalSpeciesDto("Curruca undata", "Dartford Warbler", "Provençaalse Grasmus", "Passeriformes", "Sylviidae", "Curruca", "NT"),
+            ExternalSpeciesDto("Panurus biarmicus", "Bearded Reedling", "Baardman", "Passeriformes", "Panuridae", "Panurus", "LC"),
         )
     }
 }
