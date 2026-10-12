@@ -22,6 +22,7 @@ spring:
       - classpath:db/migration/surveys
       - classpath:db/migration/notifications
       - classpath:db/migration/ebird
+      - classpath:db/migration/expeditions
   elasticsearch:
     uris: http://localhost:9200
 
