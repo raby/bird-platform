@@ -24,6 +24,7 @@ spring:
       - classpath:db/migration/ebird
       - classpath:db/migration/expeditions
       - classpath:db/migration/reserves
+      - classpath:db/migration/taxonomy
   elasticsearch:
     uris: http://localhost:9200
 

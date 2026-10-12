@@ -13,3 +13,9 @@ spring:
       - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
       - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticsearchRestClientHealthContributorAutoConfiguration
+
+# A short taxonomy cache TTL so the read-through cache's expiry + stale-fallback are demonstrable in a
+# live session (production would use a much longer TTL for near-static reference data).
+bird:
+  taxonomy:
+    ttl-seconds: 5
